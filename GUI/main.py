@@ -84,6 +84,11 @@ class Ventana(QMainWindow):
           #  print("No se ha cargado ningún archivo CSV.")  # Mensaje si no hay datos
 
 
+    # Función para salir
+    def salir(self):
+        print("Saliendo...")  # Imprime un mensaje en la consola
+        self.close()  # Cierra la ventana
+
     #DE ACA PARA ABAJO NO ESTA IMPLEMENTADO
     #CHEQUEAR SI ES NECESARIO DADO QUE MATPLOT TIENE ESTAS FUNCIONES
     # Función para guardar un archivo
@@ -102,10 +107,7 @@ class Ventana(QMainWindow):
     def adelante(self):
         print("Avanzando...")  # Imprime un mensaje en la consola
 
-    # Función para salir
-    def salir(self):
-        print("Saliendo...")  # Imprime un mensaje en la consola
-        self.close()  # Cierra la ventana
+
 
     
 
