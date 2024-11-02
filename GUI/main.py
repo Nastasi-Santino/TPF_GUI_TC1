@@ -32,6 +32,9 @@ class Ventana(QMainWindow):
         self.setWindowTitle("Mi gráfico")  # Cambia el título de la ventana
         self.setWindowIcon(QIcon("icono.jpg"))  # Cambia el icono de la ventana
 
+        # Permitir que la ventana acepte archivos arrastrados
+        self.setAcceptDrops(True)
+
         # Crea la barra de herramientas
         toolbar = QToolBar("Barra de herramientas")
         self.addToolBar(toolbar)  # Añade la barra de herramientas a la ventana
@@ -63,6 +66,31 @@ class Ventana(QMainWindow):
         self.boton6.clicked.connect(self.adelante)
         self.boton7.clicked.connect(self.salir) 
     
+    # Función para aceptar archivos arrastrados
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasUrls():
+            urls = event.mimeData().urls()
+            if urls and urls[0].toLocalFile().endswith('.csv'):
+                event.acceptProposedAction() # Acepta el arrastre
+            else:
+                event.ignore()
+        else:
+            event.ignore()
+
+
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            archivo = event.mimeData().urls()[0].toLocalFile()
+            if archivo.endswith('.csv'):
+                try:
+                    self.grafico = pd.read_csv(archivo, header=0)
+                    print(self.grafico)
+                    print(f"Archivo cargado: {archivo}")
+                except Exception as e:
+                    print(f"Error al cargar el archivo: {e}")
+            else:
+                print("El archivo debe ser un archivo CSV.")
+
     # Función para cargar un archivo
     def cargar_archivo(self):
         print("Cargue su archivo .csv")  # Imprime un mensaje en la consola
