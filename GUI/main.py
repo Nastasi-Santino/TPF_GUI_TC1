@@ -78,10 +78,48 @@ class Ventana(QMainWindow):
     # Función para generar un gráfico
     def graf(self):
         print("Generando gráfico...")  # Imprime un mensaje en la consola
-       # if hasattr(self, "grafico"):
-            #ACA grafico 
-        #else:
-          #  print("No se ha cargado ningún archivo CSV.")  # Mensaje si no hay datos
+        if hasattr(self, "grafico"):
+            eje_x = pd.to_numeric(self.grafico.iloc[:, 0], errors='coerce')  # Selecciona la primera columna como eje x
+            
+            canales = []  # Lista para almacenar los canales
+
+            # Selecciona las columnas de los canales
+            for i in range(1, 5):
+                if i<self.grafico.shape[1]: # Si hay más columnas
+                    canal = pd.to_numeric(self.grafico.iloc[:, i], errors='coerce')  # Selecciona la columna i
+                    canales.append(canal)  # Añade el canal a la lista
+                
+
+            # Eliminar valores NaN de eje_x y canales
+            eje_x = eje_x.dropna()
+            canales = [canal.dropna() for canal in canales] 
+
+            # Asegurarse de que todos los canales tengan la misma longitud
+            min_length = min(len(eje_x), *[len(canal) for canal in canales])
+            eje_x = eje_x[:min_length]
+            canales = [canal[:min_length] for canal in canales]
+
+            figura = plt.figure(figsize=(10,6))  # Crea una figura
+            
+            # Graficar los canales si existen
+            for index, canal in enumerate(canales):
+                plt.plot(eje_x, canal, label=f'Canal {index + 1}', linestyle='-', linewidth=2, alpha=0.8)
+
+            # Personalizar el gráfico
+            plt.title('', fontsize=16)
+            plt.xlabel('', fontsize=14)
+            plt.ylabel('Tensión (V)', fontsize=14)
+            plt.xticks(rotation=45, fontsize=12)
+            plt.yticks(fontsize=12)
+            plt.legend(fontsize=12, loc='upper right')
+            plt.grid(True, linestyle='--', alpha=0.7)
+
+            # Mejorar los márgenes
+            plt.tight_layout()
+
+            plt.show() # Muestra el gráfico
+        else:
+            print("No se ha cargado ningún archivo CSV.")  # Mensaje si no hay datos
 
 
     # Función para salir
