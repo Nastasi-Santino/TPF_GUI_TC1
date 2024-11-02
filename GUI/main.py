@@ -91,7 +91,7 @@ class Ventana(QMainWindow):
                 
 
             # Eliminar valores NaN de eje_x y canales
-            eje_x = eje_x.dropna()
+            eje_x = eje_x.dropna() * 1e6
             canales = [canal.dropna() for canal in canales] 
 
             # Asegurarse de que todos los canales tengan la misma longitud
@@ -109,6 +109,7 @@ class Ventana(QMainWindow):
             plt.title('', fontsize=16)
             plt.xlabel('', fontsize=14)
             plt.ylabel('Tensión (V)', fontsize=14)
+            plt.xlabel('Tiempo (us)', fontsize=14)
             plt.xticks(rotation=45, fontsize=12)
             plt.yticks(fontsize=12)
             plt.legend(fontsize=12, loc='upper right')
