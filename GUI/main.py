@@ -40,7 +40,7 @@ class Ventana(QMainWindow):
         self.addToolBar(toolbar)  # Añade la barra de herramientas a la ventana
 
         # Crea los botones con iconos
-        self.boton1 = QPushButton(QIcon("images/cargar archivo.png"), "Cargar archivo")
+        self.boton1 = QPushButton(QIcon("images/cargar archivo.png"), "Cargar archivo(Puede arrastrarlo hacia la GUI)")
         self.boton2 = QPushButton(QIcon("images/graf.png"), "Generar gráfico")
         self.boton3 = QPushButton(QIcon("images/guardar archivo.png"), "Guardar gráfico")
         self.boton4 = QPushButton(QIcon("images/borrar.png"), "Limpiar gráfico")
@@ -65,6 +65,7 @@ class Ventana(QMainWindow):
         self.boton5.clicked.connect(self.atras)
         self.boton6.clicked.connect(self.adelante)
         self.boton7.clicked.connect(self.salir) 
+
     
     # Función para aceptar archivos arrastrados
     def dragEnterEvent(self, event):
