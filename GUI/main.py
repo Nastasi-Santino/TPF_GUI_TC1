@@ -48,30 +48,15 @@ class Ventana(QMainWindow):
         self.addToolBar(toolbar)  # Añade la barra de herramientas a la ventana
 
         # Crea los botones con iconos
-        self.boton1 = QPushButton(QIcon("images/cargar archivo.png"), "Cargar archivo(Puede arrastrarlo hacia la GUI)")
-        # self.boton2 = QPushButton(QIcon("images/graf.png"), "Generar gráfico")
-        # self.boton3 = QPushButton(QIcon("images/guardar archivo.png"), "Guardar gráfico")
-        # self.boton4 = QPushButton(QIcon("images/borrar.png"), "Limpiar gráfico")
-        # self.boton5 = QPushButton(QIcon("images/atras.png"), "Atrás")
-        # self.boton6 = QPushButton(QIcon("images/adelante.png"), "Adelante")
+        self.boton1 = QPushButton(QIcon("images/cargar archivo.png"), "Cargar archivo (Puede arrastrarlo hacia la GUI)")
         self.boton7 = QPushButton(QIcon("images/salir.png"), "Salir")
 
         # Añade los botones a la barra de herramientas
         toolbar.addWidget(self.boton1)
-        # toolbar.addWidget(self.boton2)
-        # toolbar.addWidget(self.boton3)
-        # toolbar.addWidget(self.boton4)
-        # toolbar.addWidget(self.boton5)
-        # toolbar.addWidget(self.boton6)
         toolbar.addWidget(self.boton7)
 
         # Conecta los botones a sus funciones correspondientes
         self.boton1.clicked.connect(self.cargar_archivo) 
-        # self.boton2.clicked.connect(self.graf)
-        # self.boton3.clicked.connect(self.guardar_archivo)
-        # self.boton4.clicked.connect(self.borrar)
-        # self.boton5.clicked.connect(self.atras)
-        # self.boton6.clicked.connect(self.adelante)
         self.boton7.clicked.connect(self.salir)
         
         # Crea la figura y el lienzo para el gráfico
@@ -176,27 +161,6 @@ class Ventana(QMainWindow):
     def salir(self):
         print("Saliendo...")  # Imprime un mensaje en la consola
         self.close()  # Cierra la ventana
-
-    # #DE ACA PARA ABAJO NO ESTA IMPLEMENTADO
-    # #CHEQUEAR SI ES NECESARIO DADO QUE MATPLOT TIENE ESTAS FUNCIONES
-    # # Función para guardar un archivo
-    # def guardar_archivo(self):
-    #     print("Guardando archivo...")  # Imprime un mensaje en la consola
-    
-    # # Función para limpiar un gráfico
-    # def borrar(self):
-    #     print("Limpiando gráfico...")  # Imprime un mensaje en la consola
-    
-    # # Función para retroceder
-    # def atras(self):
-    #     print("Retrocediendo...")  # Imprime un mensaje en la consola
-
-    # # Función para avanzar
-    # def adelante(self):
-    #     print("Avanzando...")  # Imprime un mensaje en la consola
-
-
-
     
 
 # Crea una aplicación y una ventana principal
