@@ -48,7 +48,7 @@ class Ventana(QMainWindow):
         self.addToolBar(toolbar)  # Añade la barra de herramientas a la ventana
 
         # Crea los botones con iconos
-        self.boton1 = QPushButton(QIcon("images/cargar archivo.png"), "Cargar archivo (Puede arrastrarlo hacia la GUI)")
+        self.boton1 = QPushButton(QIcon("images/cargar archivo.png"), "Cargar archivo")
         self.boton7 = QPushButton(QIcon("images/salir.png"), "Salir")
 
         # Añade los botones a la barra de herramientas
