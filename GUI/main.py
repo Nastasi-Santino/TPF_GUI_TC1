@@ -2,7 +2,15 @@
 try:
     import sys # Importa la librería sys
     import pandas as pd  # Importa la librería pandas como pd
+    import matplotlib
     import matplotlib.pyplot as plt # Importa la librería matplotlib.pyplot como plt
+
+    matplotlib.use('QtAgg')
+
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+    from matplotlib.figure import Figure
+
     # Importa las clases QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QFileDialog y QLabel de la librería QtWidgets de PyQt6
     from PyQt6.QtWidgets import (
         QApplication,  # Maneja la aplicación y su ciclo de eventos.
@@ -41,30 +49,47 @@ class Ventana(QMainWindow):
 
         # Crea los botones con iconos
         self.boton1 = QPushButton(QIcon("images/cargar archivo.png"), "Cargar archivo(Puede arrastrarlo hacia la GUI)")
-        self.boton2 = QPushButton(QIcon("images/graf.png"), "Generar gráfico")
-        self.boton3 = QPushButton(QIcon("images/guardar archivo.png"), "Guardar gráfico")
-        self.boton4 = QPushButton(QIcon("images/borrar.png"), "Limpiar gráfico")
-        self.boton5 = QPushButton(QIcon("images/atras.png"), "Atrás")
-        self.boton6 = QPushButton(QIcon("images/adelante.png"), "Adelante")
+        # self.boton2 = QPushButton(QIcon("images/graf.png"), "Generar gráfico")
+        # self.boton3 = QPushButton(QIcon("images/guardar archivo.png"), "Guardar gráfico")
+        # self.boton4 = QPushButton(QIcon("images/borrar.png"), "Limpiar gráfico")
+        # self.boton5 = QPushButton(QIcon("images/atras.png"), "Atrás")
+        # self.boton6 = QPushButton(QIcon("images/adelante.png"), "Adelante")
         self.boton7 = QPushButton(QIcon("images/salir.png"), "Salir")
 
         # Añade los botones a la barra de herramientas
         toolbar.addWidget(self.boton1)
-        toolbar.addWidget(self.boton2)
-        toolbar.addWidget(self.boton3)
-        toolbar.addWidget(self.boton4)
-        toolbar.addWidget(self.boton5)
-        toolbar.addWidget(self.boton6)
+        # toolbar.addWidget(self.boton2)
+        # toolbar.addWidget(self.boton3)
+        # toolbar.addWidget(self.boton4)
+        # toolbar.addWidget(self.boton5)
+        # toolbar.addWidget(self.boton6)
         toolbar.addWidget(self.boton7)
 
         # Conecta los botones a sus funciones correspondientes
         self.boton1.clicked.connect(self.cargar_archivo) 
-        self.boton2.clicked.connect(self.graf)
-        self.boton3.clicked.connect(self.guardar_archivo)
-        self.boton4.clicked.connect(self.borrar)
-        self.boton5.clicked.connect(self.atras)
-        self.boton6.clicked.connect(self.adelante)
-        self.boton7.clicked.connect(self.salir) 
+        # self.boton2.clicked.connect(self.graf)
+        # self.boton3.clicked.connect(self.guardar_archivo)
+        # self.boton4.clicked.connect(self.borrar)
+        # self.boton5.clicked.connect(self.atras)
+        # self.boton6.clicked.connect(self.adelante)
+        self.boton7.clicked.connect(self.salir)
+        
+        # Crea la figura y el lienzo para el gráfico
+        self.figure = Figure(figsize=(10, 6))
+        self.canvas = FigureCanvas(self.figure)  # Define el canvas primero
+
+        # Crea la barra de herramientas de navegación para el gráfico
+        self.toolbar = NavigationToolbar(self.canvas, self)  # Luego crea la toolbar
+
+        # Disposición de los widgets en la ventana
+        layout = QVBoxLayout()
+        layout.addWidget(self.toolbar)  # Añade la barra de herramientas de navegación
+        layout.addWidget(self.canvas)   # Añade el lienzo para el gráfico
+
+        container = QWidget()
+        container.setLayout(layout)
+        self.setCentralWidget(container)
+
 
     
     # Función para aceptar archivos arrastrados
@@ -87,6 +112,7 @@ class Ventana(QMainWindow):
                     self.grafico = pd.read_csv(archivo, header=0)
                     print(self.grafico)
                     print(f"Archivo cargado: {archivo}")
+                    self.graf()
                 except Exception as e:
                     print(f"Error al cargar el archivo: {e}")
             else:
@@ -101,6 +127,7 @@ class Ventana(QMainWindow):
             try:
                 self.grafico = pd.read_csv(archivo, header=0)  # Usamos header=0 para que la primera fila sea el encabezado
                 print(self.grafico)  # Muestra el DataFrame en la consola
+                self.graf()
             except Exception as e:
                 print(f"Error al cargar el archivo: {e}")  # Manejo de errores
     
@@ -128,26 +155,19 @@ class Ventana(QMainWindow):
             eje_x = eje_x[:min_length]
             canales = [canal[:min_length] for canal in canales]
 
-            figura = plt.figure(figsize=(10,6))  # Crea una figura
-            
-            # Graficar los canales si existen
+            self.figure.clear()
+            ax = self.figure.add_subplot(111)
+
             for index, canal in enumerate(canales):
-                plt.plot(eje_x, canal, label=f'Canal {index + 1}', linestyle='-', linewidth=2, alpha=0.8)
+                ax.plot(eje_x, canal, label=f'Canal {index + 1}', linestyle='-', linewidth=2, alpha=0.8)
 
-            # Personalizar el gráfico
-            plt.title('', fontsize=16)
-            plt.xlabel('', fontsize=14)
-            plt.ylabel('Tensión (V)', fontsize=14)
-            plt.xlabel('Tiempo (us)', fontsize=14)
-            plt.xticks(rotation=45, fontsize=12)
-            plt.yticks(fontsize=12)
-            plt.legend(fontsize=12, loc='upper right')
-            plt.grid(True, linestyle='--', alpha=0.7)
+            ax.set_title('', fontsize=16)
+            ax.set_xlabel('Tiempo (us)', fontsize=14)
+            ax.set_ylabel('Tensión (V)', fontsize=14)
+            ax.legend(fontsize=12, loc='upper right')
+            ax.grid(True, linestyle='--', alpha=0.7)
 
-            # Mejorar los márgenes
-            plt.tight_layout()
-
-            plt.show() # Muestra el gráfico
+            self.canvas.draw()
         else:
             print("No se ha cargado ningún archivo CSV.")  # Mensaje si no hay datos
 
@@ -157,23 +177,23 @@ class Ventana(QMainWindow):
         print("Saliendo...")  # Imprime un mensaje en la consola
         self.close()  # Cierra la ventana
 
-    #DE ACA PARA ABAJO NO ESTA IMPLEMENTADO
-    #CHEQUEAR SI ES NECESARIO DADO QUE MATPLOT TIENE ESTAS FUNCIONES
-    # Función para guardar un archivo
-    def guardar_archivo(self):
-        print("Guardando archivo...")  # Imprime un mensaje en la consola
+    # #DE ACA PARA ABAJO NO ESTA IMPLEMENTADO
+    # #CHEQUEAR SI ES NECESARIO DADO QUE MATPLOT TIENE ESTAS FUNCIONES
+    # # Función para guardar un archivo
+    # def guardar_archivo(self):
+    #     print("Guardando archivo...")  # Imprime un mensaje en la consola
     
-    # Función para limpiar un gráfico
-    def borrar(self):
-        print("Limpiando gráfico...")  # Imprime un mensaje en la consola
+    # # Función para limpiar un gráfico
+    # def borrar(self):
+    #     print("Limpiando gráfico...")  # Imprime un mensaje en la consola
     
-    # Función para retroceder
-    def atras(self):
-        print("Retrocediendo...")  # Imprime un mensaje en la consola
+    # # Función para retroceder
+    # def atras(self):
+    #     print("Retrocediendo...")  # Imprime un mensaje en la consola
 
-    # Función para avanzar
-    def adelante(self):
-        print("Avanzando...")  # Imprime un mensaje en la consola
+    # # Función para avanzar
+    # def adelante(self):
+    #     print("Avanzando...")  # Imprime un mensaje en la consola
 
 
 
