@@ -97,7 +97,7 @@ class Ventana(QMainWindow):
         print("Cargue su archivo .csv")  # Imprime un mensaje en la consola
         # Abre un cuadro de diálogo para seleccionar el archivo
         archivo, _ = QFileDialog.getOpenFileName(self, "Cargar archivo .csv", "", "CSV Files (*.csv);;All Files (*)")
-        if archivo:  # Si se selecciona un archivo
+        if archivo and archivo.endswith('.csv'):  # Si se selecciona un archivo y es csv
             try:
                 self.grafico = pd.read_csv(archivo, header=0)  # Usamos header=0 para que la primera fila sea el encabezado
                 print(self.grafico)  # Muestra el DataFrame en la consola
