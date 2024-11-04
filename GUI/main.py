@@ -152,6 +152,7 @@ class Ventana(QMainWindow):
             ax.legend(fontsize=12, loc='upper right')
             ax.grid(True, linestyle='--', alpha=0.7)
 
+            self.figure.tight_layout()
             self.canvas.draw()
         else:
             print("No se ha cargado ningún archivo CSV.")  # Mensaje si no hay datos
