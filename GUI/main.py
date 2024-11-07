@@ -32,6 +32,7 @@ except ImportError as e:
     # Imprime el error en caso de que no se pueda importar alguna librería
     print(f"Error al importar las bibliotecas: {e}") 
 
+
 # Crea una clase Ventana que hereda de QMainWindow
 class Ventana(QMainWindow):
     def __init__(self):
@@ -51,14 +52,38 @@ class Ventana(QMainWindow):
         self.boton1 = QPushButton(QIcon("images/cargar archivo.png"), "Cargar archivo")
         self.boton7 = QPushButton(QIcon("images/salir.png"), "Salir")
 
+        # Agrega barra para escalar eje x
+        etiqueta_tiempo = QLabel("Tiempo:")
+        self.desplegableX = QComboBox()
+        self.desplegableX.addItems(["s", "ms", "us"])
+
+        
+        etiqueta_tension = QLabel("Tensión:")
+        self.desplegableY = QComboBox()
+        self.desplegableY.addItems(["V", "mV", "uV"])
+
+        self.factor_tiempo = 1
+        self.factor_tension = 1
+
         # Añade los botones a la barra de herramientas
         toolbar.addWidget(self.boton1)
         toolbar.addWidget(self.boton7)
+        toolbar.addWidget(etiqueta_tiempo)
+        toolbar.addWidget(self.desplegableX)
+        toolbar.addWidget(etiqueta_tension)
+        toolbar.addWidget(self.desplegableY)
+
 
         # Conecta los botones a sus funciones correspondientes
         self.boton1.clicked.connect(self.cargar_archivo) 
         self.boton7.clicked.connect(self.salir)
         
+        # Conecta la barra desplegable con la funcion
+        # Conectar los cambios en los desplegables a la función de actualización de escala
+        self.desplegableX.currentIndexChanged.connect(self.actualizar_escala)
+        self.desplegableY.currentIndexChanged.connect(self.actualizar_escala)
+
+
         # Crea la figura y el lienzo para el gráfico
         self.figure = Figure(figsize=(10, 6))
         self.canvas = FigureCanvas(self.figure)  # Define el canvas primero
@@ -74,7 +99,6 @@ class Ventana(QMainWindow):
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
-
 
     
     # Función para aceptar archivos arrastrados
@@ -116,46 +140,68 @@ class Ventana(QMainWindow):
             except Exception as e:
                 print(f"Error al cargar el archivo: {e}")  # Manejo de errores
     
+    def actualizar_escala(self):
+        # Definir los factores de escala según las unidades seleccionadas
+        escala_tiempo = {'s': 1, 'ms': 1e3, 'us': 1e6}
+        escala_tension = {'V': 1, 'mV': 1e3, 'uV': 1e6}
+
+        # Obtener las unidades seleccionadas
+        unidad_tiempo = self.desplegableX.currentText()
+        unidad_tension = self.desplegableY.currentText()
+
+        # Definir los factores de escala en función de las unidades seleccionadas
+        self.factor_tiempo = escala_tiempo[unidad_tiempo]
+        self.factor_tension = escala_tension[unidad_tension]
+
+        # Actualizar el gráfico con las nuevas escalas
+        self.graf()
+
+        
+
     # Función para generar un gráfico
     def graf(self):
         print("Generando gráfico...")  # Imprime un mensaje en la consola
         if hasattr(self, "grafico"):
-            eje_x = pd.to_numeric(self.grafico.iloc[:, 0], errors='coerce')  # Selecciona la primera columna como eje x
-            
+            titulo_actual = self.figure.axes[0].get_title() if self.figure.axes else "Gráfico"
+
+            # Selecciona el eje x y aplica el factor de escala
+            eje_x = pd.to_numeric(self.grafico.iloc[:, 0], errors='coerce') * self.factor_tiempo
+
             canales = []  # Lista para almacenar los canales
-
-            # Selecciona las columnas de los canales
+            # Selecciona las columnas de los canales y aplica el factor de escala
             for i in range(1, 5):
-                if i<self.grafico.shape[1]: # Si hay más columnas
-                    canal = pd.to_numeric(self.grafico.iloc[:, i], errors='coerce')  # Selecciona la columna i
-                    canales.append(canal)  # Añade el canal a la lista
-                
+                if i < self.grafico.shape[1]:  # Si hay más columnas
+                    canal = pd.to_numeric(self.grafico.iloc[:, i], errors='coerce') * self.factor_tension
+                    canales.append(canal)
 
-            # Eliminar valores NaN de eje_x y canales
-            eje_x = eje_x.dropna() * 1e6
-            canales = [canal.dropna() for canal in canales] 
-
-            # Asegurarse de que todos los canales tengan la misma longitud
+            # Elimina valores NaN
+            eje_x = eje_x.dropna()
+            canales = [canal.dropna() for canal in canales]
+            
+            # Asegúrate de que todos los canales tengan la misma longitud
             min_length = min(len(eje_x), *[len(canal) for canal in canales])
             eje_x = eje_x[:min_length]
             canales = [canal[:min_length] for canal in canales]
 
+            # Limpia y vuelve a dibujar el gráfico
             self.figure.clear()
             ax = self.figure.add_subplot(111)
-
             for index, canal in enumerate(canales):
                 ax.plot(eje_x, canal, label=f'Canal {index + 1}', linestyle='-', linewidth=2, alpha=0.8)
 
-            ax.set_title('', fontsize=16)
-            ax.set_xlabel('Tiempo (us)', fontsize=14)
-            ax.set_ylabel('Tensión (V)', fontsize=14)
+            # Etiquetas del gráfico
+            ax.set_title(f"{titulo_actual}", fontsize=14)
+            ax.set_xlabel(f"Tiempo ({self.desplegableX.currentText()})", fontsize=14)
+            ax.set_ylabel(f"Tensión ({self.desplegableY.currentText()})", fontsize=14)
             ax.legend(fontsize=12, loc='upper right')
             ax.grid(True, linestyle='--', alpha=0.7)
 
+            # Dibuja el gráfico actualizado
             self.figure.tight_layout()
             self.canvas.draw()
         else:
             print("No se ha cargado ningún archivo CSV.")  # Mensaje si no hay datos
+
 
 
     # Función para salir
