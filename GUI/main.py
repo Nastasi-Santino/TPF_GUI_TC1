@@ -37,7 +37,7 @@ except ImportError as e:
 class Ventana(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setMinimumSize(400, 400)  # Establece el tamaño mínimo de la ventana
+        self.setMinimumSize(500, 500)  # Establece el tamaño mínimo de la ventana
         self.setWindowTitle("Mi gráfico")  # Cambia el título de la ventana
         self.setWindowIcon(QIcon("icono.jpg"))  # Cambia el icono de la ventana
 
@@ -66,10 +66,12 @@ class Ventana(QMainWindow):
         self.factor_tension = 1 # Factor de escala para el eje y
 
         # Crea el botón para activar/desactivar los cursores
-        self.boton_cursores = QPushButton("Activar Cursores")
+        self.boton_cursor_x = QPushButton("Cursor_tiempo")
+        self.boton_cursor_y = QPushButton("Cursor_tension")
 
         # Etiqueta para mostrar la distancia entre los cursores
-        self.etiqueta_distancia = QLabel("Distancia: -")
+        self.etiqueta_distancia_tension = QLabel("Tension: -")
+        self.etiqueta_distancia_tiempo = QLabel("Tiempo: -")
 
         # Añade los botones a la barra de herramientas
         toolbar.addWidget(self.boton1)
@@ -78,14 +80,17 @@ class Ventana(QMainWindow):
         toolbar.addWidget(self.desplegableX)
         toolbar.addWidget(etiqueta_tension)
         toolbar.addWidget(self.desplegableY)
-        toolbar.addWidget(self.boton_cursores)
-        toolbar.addWidget(self.etiqueta_distancia)
+        toolbar.addWidget(self.boton_cursor_x)
+        toolbar.addWidget(self.boton_cursor_y)
+        toolbar.addWidget(self.etiqueta_distancia_tension)
+        toolbar.addWidget(self.etiqueta_distancia_tiempo)
 
 
         # Conecta los botones a sus funciones correspondientes
         self.boton1.clicked.connect(self.cargar_archivo) 
         self.boton2.clicked.connect(self.salir)
-        self.boton_cursores.clicked.connect(self.activar_cursores)
+        self.boton_cursor_x.clicked.connect(self.activar_cursores_x)
+        self.boton_cursor_y.clicked.connect(self.activar_cursores_y)
 
         # Conecta la barra desplegable con la funcion
         # Conectar los cambios en los desplegables a la función de actualización de escala
@@ -94,11 +99,12 @@ class Ventana(QMainWindow):
 
 
         # Inicializa variables para los cursores y su estado
-        self.cursor_activado = False
+        self.cursor_activado_x = False
+        self.cursor_activado_y = False
         self.cursor1_x = None
         self.cursor2_x = None
-        self.cursor1 = None
-        self.cursor2 = None
+        self.cursor1_y = None
+        self.cursor2_y = None
 
         # Crea la figura y el lienzo para el gráfico
         self.figure = Figure(figsize=(10, 6))
@@ -120,47 +126,70 @@ class Ventana(QMainWindow):
         self.canvas.mpl_connect("button_press_event", self.onclick)
 
     # Método para activar/desactivar los cursores
-    def activar_cursores(self):
+    def activar_cursores_x(self):
         # Cambia el estado de activación de los cursores
-        self.cursor_activado = not self.cursor_activado
-        if self.cursor_activado:
-            self.boton_cursores.setText("Desactivar Cursores")
+        self.cursor_activado_x = not self.cursor_activado_x
+        if self.cursor_activado_x:
+            self.boton_cursor_x.setText("Desactivar Cursor_tiempo")
             self.canvas.mpl_connect("button_press_event", self.onclick)
         else:
-            self.boton_cursores.setText("Activar Cursores")
-            self.limpiar_cursores()
+            self.boton_cursor_x.setText("Activar Cursor_tiempo")
+            self.limpiar_cursores_x()
+                # Método para activar/desactivar los cursores
 
     # Método para limpiar los cursores
-    def limpiar_cursores(self):
+    def limpiar_cursores_x(self):
         # Limpia los cursores y la etiqueta de distancia
         self.cursor1_x = None
         self.cursor2_x = None
-        self.etiqueta_distancia.setText("Distancia: -")
+        self.etiqueta_distancia_tiempo.setText("Tiempo: -")
         self.graf()  # Redibuja sin los cursores
 
-    # Método para el evento de clic para establecer o mover los cursores
+    # Método para activar/desactivar los cursores
+    def activar_cursores_y(self):
+        # Cambia el estado de activación de los cursores
+        self.cursor_activado_y = not self.cursor_activado_y
+        if self.cursor_activado_y:
+            self.boton_cursor_y.setText("Desactivar Cursor_tension")
+            self.canvas.mpl_connect("button_press_event", self.onclick)
+        else:
+            self.boton_cursor_y.setText("Activar Cursor_tension")
+            self.limpiar_cursores_y()
+
+    # Método para limpiar los cursores
+    def limpiar_cursores_y(self):
+        # Limpia los cursores y la etiqueta de distancia
+        self.cursor1_y = None
+        self.cursor2_y = None
+        self.etiqueta_distancia_tension.setText("Tension: -")
+        self.graf()  # Redibuja sin los cursores
+
+    # Método para manejar el evento de clic en el lienzo
     def onclick(self, event):
-        if not self.cursor_activado:
-            return
-        if event.inaxes != self.figure.axes[0]:  # Verifica que el clic esté en el área del gráfico
+        if event.inaxes != self.figure.axes[0]:
             return
 
-        # Establece la posición del primer o segundo cursor
-        if self.cursor1_x is None:
-            self.cursor1_x = event.xdata  # Establece el primer cursor
-            print(f"Cursor 1 en x = {self.cursor1_x}")
-        elif self.cursor2_x is None:
-            self.cursor2_x = event.xdata  # Establece el segundo cursor
-            print(f"Cursor 2 en x = {self.cursor2_x}")
-            
-            # Calcula y muestra la distancia entre los cursores en el eje x
-            distancia = abs(self.cursor2_x - self.cursor1_x) * self.factor_tiempo
-            self.etiqueta_distancia.setText(f"Distancia en x: {distancia:.2f} {self.desplegableX.currentText()}")
+        # Si los cursores están activados, maneja el evento de clic
+        if self.cursor_activado_x:
+            if self.cursor1_x is None:
+                self.cursor1_x = event.xdata
+            elif self.cursor2_x is None:
+                self.cursor2_x = event.xdata
+                distancia = abs(self.cursor2_x - self.cursor1_x) / self.factor_tiempo
+                self.etiqueta_distancia_tiempo.setText(f"Tiempo: {distancia:.2f} {self.desplegableX.currentText()}")
+            self.graf()
 
-        # Redibuja el gráfico con los cursores actualizados
-        self.graf()
+        # Si los cursores están activados, maneja el evento de clic
+        if self.cursor_activado_y:
+            if self.cursor1_y is None:
+                self.cursor1_y = event.ydata
+            elif self.cursor2_y is None:
+                self.cursor2_y = event.ydata
+                distancia = abs(self.cursor2_y - self.cursor1_y) / self.factor_tension
+                self.etiqueta_distancia_tension.setText(f"Tensión: {distancia:.2f} {self.desplegableY.currentText()}")
+            self.graf()
 
-    
+
     # Función para aceptar archivos arrastrados
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -259,7 +288,11 @@ class Ventana(QMainWindow):
             if self.cursor1_x is not None:
                 ax.axvline(x=self.cursor1_x, color='red', linestyle='--', label="Cursor")
             if self.cursor2_x is not None:
-                ax.axvline(x=self.cursor2_x, color='blue', linestyle='--', label="Cursor")
+                ax.axvline(x=self.cursor2_x, color='red', linestyle='--', label="Cursor")
+            if self.cursor1_y is not None:
+                ax.axhline(y=self.cursor1_y, color='blue', linestyle='--', label="Cursor")
+            if self.cursor2_y is not None:
+                ax.axhline(y=self.cursor2_y, color='blue', linestyle='--', label="Cursor")               
 
             # Dibuja el gráfico actualizado
             self.figure.tight_layout()
