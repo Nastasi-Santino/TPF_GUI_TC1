@@ -2,14 +2,14 @@
 try:
     import sys # Importa la librería sys
     import pandas as pd  # Importa la librería pandas como pd
-    import matplotlib
+    import matplotlib # Importa la librería matplotlib
     import matplotlib.pyplot as plt # Importa la librería matplotlib.pyplot como plt
 
-    matplotlib.use('QtAgg')
+    matplotlib.use('QtAgg') # Selecciona el backend Qt5Agg para matplotlib
 
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-    from matplotlib.figure import Figure
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas # Importa la clase FigureCanvasQTAgg de la librería matplotlib.backends.backend_qt5agg
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar # Importa la clase NavigationToolbar2QT de la librería matplotlib.backends.backend_qt5agg
+    from matplotlib.figure import Figure # Importa la clase Figure de la librería matplotlib.figure
 
     # Importa las clases QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QFileDialog y QLabel de la librería QtWidgets de PyQt6
     from PyQt6.QtWidgets import (
@@ -50,39 +50,55 @@ class Ventana(QMainWindow):
 
         # Crea los botones con iconos
         self.boton1 = QPushButton(QIcon("images/cargar archivo.png"), "Cargar archivo")
-        self.boton7 = QPushButton(QIcon("images/salir.png"), "Salir")
+        self.boton2 = QPushButton(QIcon("images/salir.png"), "Salir")
 
         # Agrega barra para escalar eje x
-        etiqueta_tiempo = QLabel("Tiempo:")
-        self.desplegableX = QComboBox()
-        self.desplegableX.addItems(["s", "ms", "us"])
+        etiqueta_tiempo = QLabel("Tiempo:") # Crea una etiqueta para el desplegable de tiempo
+        self.desplegableX = QComboBox() # Crea un desplegable para seleccionar la escala de tiempo
+        self.desplegableX.addItems(["s", "ms", "us"]) # Añade las opciones al desplegable
 
-        
-        etiqueta_tension = QLabel("Tensión:")
-        self.desplegableY = QComboBox()
-        self.desplegableY.addItems(["V", "mV", "uV"])
+        # Agrega barra para escalar eje y
+        etiqueta_tension = QLabel("Tensión:") # Crea una etiqueta para el desplegable de tensión
+        self.desplegableY = QComboBox() # Crea un desplegable para seleccionar la escala de tensión
+        self.desplegableY.addItems(["V", "mV", "uV"]) # Añade las opciones al desplegable
 
-        self.factor_tiempo = 1
-        self.factor_tension = 1
+        self.factor_tiempo = 1 # Factor de escala para el eje x
+        self.factor_tension = 1 # Factor de escala para el eje y
+
+        # Crea el botón para activar/desactivar los cursores
+        self.boton_cursores = QPushButton("Activar Cursores")
+
+        # Etiqueta para mostrar la distancia entre los cursores
+        self.etiqueta_distancia = QLabel("Distancia: -")
 
         # Añade los botones a la barra de herramientas
         toolbar.addWidget(self.boton1)
-        toolbar.addWidget(self.boton7)
+        toolbar.addWidget(self.boton2)
         toolbar.addWidget(etiqueta_tiempo)
         toolbar.addWidget(self.desplegableX)
         toolbar.addWidget(etiqueta_tension)
         toolbar.addWidget(self.desplegableY)
+        toolbar.addWidget(self.boton_cursores)
+        toolbar.addWidget(self.etiqueta_distancia)
 
 
         # Conecta los botones a sus funciones correspondientes
         self.boton1.clicked.connect(self.cargar_archivo) 
-        self.boton7.clicked.connect(self.salir)
-        
+        self.boton2.clicked.connect(self.salir)
+        self.boton_cursores.clicked.connect(self.activar_cursores)
+
         # Conecta la barra desplegable con la funcion
         # Conectar los cambios en los desplegables a la función de actualización de escala
         self.desplegableX.currentIndexChanged.connect(self.actualizar_escala)
         self.desplegableY.currentIndexChanged.connect(self.actualizar_escala)
 
+
+        # Inicializa variables para los cursores y su estado
+        self.cursor_activado = False
+        self.cursor1_x = None
+        self.cursor2_x = None
+        self.cursor1 = None
+        self.cursor2 = None
 
         # Crea la figura y el lienzo para el gráfico
         self.figure = Figure(figsize=(10, 6))
@@ -92,13 +108,57 @@ class Ventana(QMainWindow):
         self.toolbar = NavigationToolbar(self.canvas, self)  # Luego crea la toolbar
 
         # Disposición de los widgets en la ventana
-        layout = QVBoxLayout()
+        layout = QVBoxLayout() # Crea un layout vertical
         layout.addWidget(self.toolbar)  # Añade la barra de herramientas de navegación
         layout.addWidget(self.canvas)   # Añade el lienzo para el gráfico
 
-        container = QWidget()
-        container.setLayout(layout)
-        self.setCentralWidget(container)
+        container = QWidget() # Crea un contenedor para los widgets
+        container.setLayout(layout) # Establece el layout en el contenedor
+        self.setCentralWidget(container) # Establece el contenedor como widget central
+
+        # Conecta el evento de clic en el lienzo a la función onclick
+        self.canvas.mpl_connect("button_press_event", self.onclick)
+
+    # Método para activar/desactivar los cursores
+    def activar_cursores(self):
+        # Cambia el estado de activación de los cursores
+        self.cursor_activado = not self.cursor_activado
+        if self.cursor_activado:
+            self.boton_cursores.setText("Desactivar Cursores")
+            self.canvas.mpl_connect("button_press_event", self.onclick)
+        else:
+            self.boton_cursores.setText("Activar Cursores")
+            self.limpiar_cursores()
+
+    # Método para limpiar los cursores
+    def limpiar_cursores(self):
+        # Limpia los cursores y la etiqueta de distancia
+        self.cursor1_x = None
+        self.cursor2_x = None
+        self.etiqueta_distancia.setText("Distancia: -")
+        self.graf()  # Redibuja sin los cursores
+
+    # Método para el evento de clic para establecer o mover los cursores
+    def onclick(self, event):
+        if not self.cursor_activado:
+            return
+        if event.inaxes != self.figure.axes[0]:  # Verifica que el clic esté en el área del gráfico
+            return
+
+        # Establece la posición del primer o segundo cursor
+        if self.cursor1_x is None:
+            self.cursor1_x = event.xdata  # Establece el primer cursor
+            print(f"Cursor 1 en x = {self.cursor1_x}")
+        elif self.cursor2_x is None:
+            self.cursor2_x = event.xdata  # Establece el segundo cursor
+            print(f"Cursor 2 en x = {self.cursor2_x}")
+            
+            # Calcula y muestra la distancia entre los cursores en el eje x
+            distancia = abs(self.cursor2_x - self.cursor1_x) * self.factor_tiempo
+            self.etiqueta_distancia.setText(f"Distancia en x: {distancia:.2f} {self.desplegableX.currentText()}")
+
+        # Redibuja el gráfico con los cursores actualizados
+        self.graf()
 
     
     # Función para aceptar archivos arrastrados
@@ -112,7 +172,7 @@ class Ventana(QMainWindow):
         else:
             event.ignore()
 
-
+    # Función para cargar el archivo arrastrado
     def dropEvent(self, event):
         if event.mimeData().hasUrls():
             archivo = event.mimeData().urls()[0].toLocalFile()
@@ -142,11 +202,11 @@ class Ventana(QMainWindow):
     
     def actualizar_escala(self):
         # Definir los factores de escala según las unidades seleccionadas
-        escala_tiempo = {'s': 1, 'ms': 1e3, 'us': 1e6}
-        escala_tension = {'V': 1, 'mV': 1e3, 'uV': 1e6}
+        escala_tiempo = {'s': 1, 'ms': 1e3, 'us': 1e6} # Escalas de tiempo
+        escala_tension = {'V': 1, 'mV': 1e3, 'uV': 1e6} # Escalas de tensión
 
         # Obtener las unidades seleccionadas
-        unidad_tiempo = self.desplegableX.currentText()
+        unidad_tiempo = self.desplegableX.currentText() 
         unidad_tension = self.desplegableY.currentText()
 
         # Definir los factores de escala en función de las unidades seleccionadas
@@ -178,7 +238,7 @@ class Ventana(QMainWindow):
             eje_x = eje_x.dropna()
             canales = [canal.dropna() for canal in canales]
             
-            # Asegúrate de que todos los canales tengan la misma longitud
+            # Asegura que todos los canales tengan la misma longitud
             min_length = min(len(eje_x), *[len(canal) for canal in canales])
             eje_x = eje_x[:min_length]
             canales = [canal[:min_length] for canal in canales]
@@ -196,11 +256,19 @@ class Ventana(QMainWindow):
             ax.legend(fontsize=12, loc='upper right')
             ax.grid(True, linestyle='--', alpha=0.7)
 
+            if self.cursor1_x is not None:
+                ax.axvline(x=self.cursor1_x, color='red', linestyle='--', label="Cursor")
+            if self.cursor2_x is not None:
+                ax.axvline(x=self.cursor2_x, color='blue', linestyle='--', label="Cursor")
+
             # Dibuja el gráfico actualizado
             self.figure.tight_layout()
             self.canvas.draw()
         else:
             print("No se ha cargado ningún archivo CSV.")  # Mensaje si no hay datos
+
+
+
 
 
 
