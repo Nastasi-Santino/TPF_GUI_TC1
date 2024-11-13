@@ -1,43 +1,25 @@
-# Intenta importar las librerías necesarias para el proyecto.
 try:
-    import sys # Importa la librería sys
-    import pandas as pd  # Importa la librería pandas como pd
-    import matplotlib # Importa la librería matplotlib
-    import matplotlib.pyplot as plt # Importa la librería matplotlib.pyplot como plt
-
-    matplotlib.use('QtAgg') # Selecciona el backend Qt5Agg para matplotlib
-
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas # Importa la clase FigureCanvasQTAgg de la librería matplotlib.backends.backend_qt5agg
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar # Importa la clase NavigationToolbar2QT de la librería matplotlib.backends.backend_qt5agg
-    from matplotlib.figure import Figure # Importa la clase Figure de la librería matplotlib.figure
-
+    import sys
+    import pandas as pd
+    import matplotlib
+    import matplotlib.pyplot as plt
+    matplotlib.use('QtAgg') 
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+    from matplotlib.figure import Figure
     from dataclasses import dataclass
-
-    # Importa las clases QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QFileDialog y QLabel de la librería QtWidgets de PyQt6
     from PyQt6.QtWidgets import (
-        QApplication,
-        QMainWindow,
-        QPushButton,
-        QVBoxLayout,
-        QWidget,
-        QFileDialog,
-        QLabel,
-        QToolBar,
-        QComboBox,
-        QLineEdit, 
-        QComboBox, 
-        QDialog,
-        QHBoxLayout,
-        QMessageBox
+        QApplication, QMainWindow, QPushButton, QVBoxLayout,
+        QWidget, QFileDialog, QLabel, QToolBar,
+        QComboBox, QLineEdit, QDialog,
+        QHBoxLayout, QMessageBox
     )
-    from PyQt6.QtGui import QIcon # Importa la clase QIcon de la librería QtGui de PyQt6 para manejar iconos. 
+    from PyQt6.QtGui import QIcon, QAction
 
-    # Imprime un mensaje si las bibliotecas se importan correctamente
     print("Bibliotecas importadas correctamente.")
 
 except ImportError as e:
-    # Imprime el error en caso de que no se pueda importar alguna librería
-    print(f"Error al importar las bibliotecas: {e}") 
+    print(f"Error al importar las bibliotecas: {e}")
 
 @dataclass
 class Cambiar:
@@ -45,7 +27,7 @@ class Cambiar:
     desplazamiento: float
     amplitud: float
 
-class CanalDialogo(QDialog):
+class VentanaEditarCanal(QDialog):
     def __init__(self, ventana_principal):
         super().__init__()
         self.ventana_principal = ventana_principal
@@ -136,92 +118,22 @@ class CanalDialogo(QDialog):
 
 # Crea una clase Ventana que hereda de QMainWindow
 class VentanaPrincipal(QMainWindow):
+
     def __init__(self):
         super().__init__()
-        self.setMinimumSize(500, 500)  # Establece el tamaño mínimo de la ventana
-        self.setWindowTitle("Mi gráfico")  # Cambia el título de la ventana
-        self.setWindowIcon(QIcon("icono.jpg"))  # Cambia el icono de la ventana
-
-        # Permitir que la ventana acepte archivos arrastrados
+        self.setMinimumSize(500, 500)
+        self.setWindowTitle("Mi gráfico")
+        self.setWindowIcon(QIcon("icono.jpg"))
         self.setAcceptDrops(True)
 
-        # Crea la barra de herramientas
-        toolbar = QToolBar("Barra de herramientas")
-        self.addToolBar(toolbar)  # Añade la barra de herramientas a la ventana
+        # Crea la barra de menús
+        menu_bar = self.menuBar()
 
-        # Crea los botones con iconos
-        self.boton1 = QPushButton(QIcon("images/cargar archivo.png"), "Cargar archivo")
-        self.boton2 = QPushButton(QIcon("images/salir.png"), "Salir")
-
-        # Agrega barra para escalar eje x
-        etiqueta_tiempo = QLabel("Tiempo:") # Crea una etiqueta para el desplegable de tiempo
-        self.desplegableX = QComboBox() # Crea un desplegable para seleccionar la escala de tiempo
-        self.desplegableX.addItems(["s", "ms", "us"]) # Añade las opciones al desplegable
-
-        # Agrega barra para escalar eje y
-        etiqueta_tension = QLabel("Tensión:") # Crea una etiqueta para el desplegable de tensión
-        self.desplegableY = QComboBox() # Crea un desplegable para seleccionar la escala de tensión
-        self.desplegableY.addItems(["V", "mV", "uV"]) # Añade las opciones al desplegable
-
+        # Variables
         self.factor_tiempo = 1 # Factor de escala para el eje x
         self.factor_tension = 1 # Factor de escala para el eje y
         self.pos_label = "upper right" # Posición del Label por default
         self.modCanal = Cambiar(1, 0, 1)
-
-        # Crea el botón para activar/desactivar los cursores
-        self.boton_cursor_x = QPushButton("Activar cursor tiempo")
-        self.boton_cursor_y = QPushButton("Activar cursor tension") 
-
-        # Agrega barra para cambiar de lugar la leyenda
-        self.etiqueta_label = QLabel("Label:")
-        self.desplegableLabel = QComboBox()
-        self.desplegableLabel.addItems(["Arriba derecha",
-                                        "Arriba izquierda", "Abajo derecha",
-                                        "Abajo izquierda", "Arriba centro",
-                                        "Abajo centro", "Centro izquierda",
-                                        "Centro derecha", "Centro"])
-
-        # Etiqueta para mostrar la distancia entre los cursores
-        self.etiqueta_distancia_tension = QLabel("Tension: -")
-        self.etiqueta_distancia_tiempo = QLabel("Tiempo: -")
-
-        # Modificar el canal
-        self.boton_abrir_dialogo = QPushButton("Modificar canales")
-        self.boton_abrir_dialogo.clicked.connect(self.abrir_dialogo)
-
-        # Añade los botones a la barra de herramientas
-        toolbar.addWidget(self.boton1)
-        toolbar.addWidget(self.boton2)
-        toolbar.addSeparator()
-        toolbar.addWidget(etiqueta_tiempo)
-        toolbar.addWidget(self.desplegableX)
-        toolbar.addWidget(etiqueta_tension)
-        toolbar.addWidget(self.desplegableY)
-        toolbar.addSeparator()
-        toolbar.addWidget(self.boton_cursor_x)
-        toolbar.addWidget(self.boton_cursor_y)
-        toolbar.addSeparator()
-        toolbar.addWidget(self.etiqueta_label)
-        toolbar.addWidget(self.desplegableLabel)
-        toolbar.addSeparator()
-        toolbar.addWidget(self.etiqueta_distancia_tension)
-        toolbar.addWidget(self.etiqueta_distancia_tiempo)
-        toolbar.addSeparator()
-        toolbar.addWidget(self.boton_abrir_dialogo)
-
-        # Conecta los botones a sus funciones correspondientes
-        self.boton1.clicked.connect(self.cargar_archivo) 
-        self.boton2.clicked.connect(self.salir)
-        self.boton_cursor_x.clicked.connect(self.activar_cursores_x)
-        self.boton_cursor_y.clicked.connect(self.activar_cursores_y)
-
-        # Conecta la barra desplegable con la funcion
-        # Conectar los cambios en los desplegables a la función de actualización de escala
-        self.desplegableX.currentIndexChanged.connect(self.actualizar_escala)
-        self.desplegableY.currentIndexChanged.connect(self.actualizar_escala)
-
-        # Conecta los cambios en el desplegable del label con la función
-        self.desplegableLabel.currentIndexChanged.connect(self.actualizar_label)
 
         # Inicializa variables para los cursores y su estado
         self.cursor_activado_x = False
@@ -231,68 +143,124 @@ class VentanaPrincipal(QMainWindow):
         self.cursor1_y = None
         self.cursor2_y = None
 
-        # Crea la figura y el lienzo para el gráfico
-        self.figure = Figure(figsize=(10, 6))
-        self.canvas = FigureCanvas(self.figure)  # Define el canvas primero
+        # Menú de archivo con opciones para cargar archivo y salir
+        menu_archivo = menu_bar.addMenu("Archivo")
+        accion_cargar = QAction(QIcon("images/cargar archivo.png"), "Cargar archivo", self)
+        accion_salir = QAction(QIcon("images/salir.png"), "Salir", self)
+        menu_archivo.addAction(accion_cargar)
+        menu_archivo.addAction(accion_salir)
 
-        # Crea la barra de herramientas de navegación para el gráfico
-        self.toolbar = NavigationToolbar(self.canvas, self)  # Luego crea la toolbar
+         # Menú de opciones para activar/desactivar cursores
+        menu_cursores = menu_bar.addMenu("Cursores")
+        self.accion_activar_cursor_x = QAction("Activar cursor tiempo", self)
+        self.accion_activar_cursor_y = QAction("Activar cursor tensión", self)
+        menu_cursores.addAction(self.accion_activar_cursor_x)
+        menu_cursores.addAction(self.accion_activar_cursor_y)
+
+        # Conecta las acciones del menú a las funciones correspondientes
+        accion_cargar.triggered.connect(self.cargar_archivo)
+        accion_salir.triggered.connect(self.salir)
+        self.accion_activar_cursor_x.triggered.connect(self.activar_cursores_x)
+        self.accion_activar_cursor_y.triggered.connect(self.activar_cursores_y)
+
+        # Crea la barra de herramientas
+        toolbar = QToolBar("Barra de herramientas")
+        self.addToolBar(toolbar)
+
+        # Agrega elementos a la barra de herramientas
+        etiqueta_tiempo = QLabel("Tiempo:")
+        self.desplegableX = QComboBox()
+        self.desplegableX.addItems(["s", "ms", "us"])
+
+        etiqueta_tension = QLabel("Tensión:")
+        self.desplegableY = QComboBox()
+        self.desplegableY.addItems(["V", "mV", "uV"])
+
+        self.etiqueta_label = QLabel("Label:")
+        self.desplegableLabel = QComboBox()
+        self.desplegableLabel.addItems(["Arriba derecha", "Arriba izquierda", "Abajo derecha",
+                                        "Abajo izquierda", "Arriba centro", "Abajo centro",
+                                        "Centro izquierda", "Centro derecha", "Centro"])
+
+        self.etiqueta_distancia_tension = QLabel("Tension: -")
+        self.etiqueta_distancia_tiempo = QLabel("Tiempo: -")
+
+        # Modificar el canal
+        self.botonEditarCanales = QPushButton("Modificar canales")
+        self.botonEditarCanales.clicked.connect(self.abrirVentanaEditarCanal)
+
+        # Añade widgets a la barra de herramientas
+        toolbar.addWidget(etiqueta_tiempo)
+        toolbar.addWidget(self.desplegableX)
+        toolbar.addWidget(etiqueta_tension)
+        toolbar.addWidget(self.desplegableY)
+        toolbar.addSeparator()
+        toolbar.addWidget(self.etiqueta_label)
+        toolbar.addWidget(self.desplegableLabel)
+        toolbar.addWidget(self.botonEditarCanales)
+        toolbar.addSeparator()
+        toolbar.addWidget(self.etiqueta_distancia_tension)
+        toolbar.addSeparator()
+        toolbar.addWidget(self.etiqueta_distancia_tiempo)
+
+        # Conecta las barras desplegables con sus funciones
+        self.desplegableX.currentIndexChanged.connect(self.actualizar_escala)
+        self.desplegableY.currentIndexChanged.connect(self.actualizar_escala)
+        self.desplegableLabel.currentIndexChanged.connect(self.actualizar_label)
+
+        # Configuración de la figura y el lienzo
+        self.figure = Figure(figsize=(10, 6))
+        self.canvas = FigureCanvas(self.figure)
+        self.toolbar = NavigationToolbar(self.canvas, self)
 
         # Disposición de los widgets en la ventana
-        layout = QVBoxLayout() # Crea un layout vertical
-        layout.addWidget(self.toolbar)  # Añade la barra de herramientas de navegación
-        layout.addWidget(self.canvas)   # Añade el lienzo para el gráfico
+        layout = QVBoxLayout()
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.canvas)
 
-        container = QWidget() # Crea un contenedor para los widgets
-        container.setLayout(layout) # Establece el layout en el contenedor
-        self.setCentralWidget(container) # Establece el contenedor como widget central
-        
-        # Conecta el evento de clic en el lienzo a la función onclick
+        container = QWidget()
+        container.setLayout(layout)
+        self.setCentralWidget(container)
+
+        # Conectar eventos adicionales
         self.canvas.mpl_connect("button_press_event", self.onclick)
 
 
-    def abrir_dialogo(self):
+    def abrirVentanaEditarCanal(self):
         # Crear una instancia del diálogo de configuración de canal y mostrarlo
-        dialogo = CanalDialogo(self)
+        dialogo = VentanaEditarCanal(self)
         dialogo.exec()
     
-    # Método para activar/desactivar los cursores
+    # Método para activar/desactivar los cursores de tiempo
     def activar_cursores_x(self):
-        # Cambia el estado de activación de los cursores
         self.cursor_activado_x = not self.cursor_activado_x
         if self.cursor_activado_x:
-            self.boton_cursor_x.setText("Desactivar Cursor Tiempo")
-            self.canvas.mpl_connect("button_press_event", self.onclick)
+            self.accion_activar_cursor_x.setText("Desactivar cursor tiempo")
         else:
-            self.boton_cursor_x.setText("Activar Cursor Tiempo")
+            self.accion_activar_cursor_x.setText("Activar cursor tiempo")
             self.limpiar_cursores_x()
-                # Método para activar/desactivar los cursores
 
-    # Método para limpiar los cursores
+    # Método para limpiar los cursores de tiempo
     def limpiar_cursores_x(self):
-        # Limpia los cursores y la etiqueta de distancia
         self.cursor1_x = None
         self.cursor2_x = None
         self.etiqueta_distancia_tiempo.setText("Tiempo: -")
         self.graf()  # Redibuja sin los cursores
 
-    # Método para activar/desactivar los cursores
+    # Método para activar/desactivar los cursores de tensión
     def activar_cursores_y(self):
-        # Cambia el estado de activación de los cursores
         self.cursor_activado_y = not self.cursor_activado_y
         if self.cursor_activado_y:
-            self.boton_cursor_y.setText("Desactivar cursor tension")
-            self.canvas.mpl_connect("button_press_event", self.onclick)
+            self.accion_activar_cursor_y.setText("Desactivar cursor tensión")
         else:
-            self.boton_cursor_y.setText("Activar cursor tension")
+            self.accion_activar_cursor_y.setText("Activar cursor tensión")
             self.limpiar_cursores_y()
 
-    # Método para limpiar los cursores
+    # Método para limpiar los cursores de tensión
     def limpiar_cursores_y(self):
-        # Limpia los cursores y la etiqueta de distancia
         self.cursor1_y = None
         self.cursor2_y = None
-        self.etiqueta_distancia_tension.setText("Tension: -")
+        self.etiqueta_distancia_tension.setText("Tensión: -")
         self.graf()  # Redibuja sin los cursores
 
     # Método para manejar el evento de clic en el lienzo
@@ -300,26 +268,25 @@ class VentanaPrincipal(QMainWindow):
         if event.inaxes != self.figure.axes[0]:
             return
 
-        # Si los cursores están activados, maneja el evento de clic
+        # Si los cursores de tiempo están activados, maneja el evento de clic
         if self.cursor_activado_x:
             if self.cursor1_x is None:
                 self.cursor1_x = event.xdata
             elif self.cursor2_x is None:
                 self.cursor2_x = event.xdata
-                distancia = abs(self.cursor2_x - self.cursor1_x) 
-                self.etiqueta_distancia_tiempo.setText(f"Tiempo: {distancia:.8f} {self.desplegableX.currentText()}")
+                distancia = abs(self.cursor2_x - self.cursor1_x)
+                self.etiqueta_distancia_tiempo.setText(f"Tiempo: {distancia:.4f} {self.desplegableX.currentText()}")
             self.graf()
 
-        # Si los cursores están activados, maneja el evento de clic
+        # Si los cursores de tensión están activados, maneja el evento de clic
         if self.cursor_activado_y:
             if self.cursor1_y is None:
                 self.cursor1_y = event.ydata
             elif self.cursor2_y is None:
                 self.cursor2_y = event.ydata
                 distancia = abs(self.cursor2_y - self.cursor1_y)
-                self.etiqueta_distancia_tension.setText(f"Tensión: {distancia:.8f} {self.desplegableY.currentText()}")
+                self.etiqueta_distancia_tension.setText(f"Tensión: {distancia:.4f} {self.desplegableY.currentText()}")
             self.graf()
-
 
     # Función para aceptar archivos arrastrados
     def dragEnterEvent(self, event):
