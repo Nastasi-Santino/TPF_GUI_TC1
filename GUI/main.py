@@ -153,11 +153,6 @@ class VentanaPrincipal(QMainWindow):
         self.boton1 = QPushButton(QIcon("images/cargar archivo.png"), "Cargar archivo")
         self.boton2 = QPushButton(QIcon("images/salir.png"), "Salir")
 
-        # Añade los botones a la barra de herramientas
-        toolbar.addWidget(self.boton1)
-        toolbar.addWidget(self.boton2)
-        toolbar.addSeparator()
-
         # Agrega barra para escalar eje x
         etiqueta_tiempo = QLabel("Tiempo:") # Crea una etiqueta para el desplegable de tiempo
         self.desplegableX = QComboBox() # Crea un desplegable para seleccionar la escala de tiempo
@@ -168,21 +163,14 @@ class VentanaPrincipal(QMainWindow):
         self.desplegableY = QComboBox() # Crea un desplegable para seleccionar la escala de tensión
         self.desplegableY.addItems(["V", "mV", "uV"]) # Añade las opciones al desplegable
 
-        # Añade los elementos de escala a la barra de herramientas
-        toolbar.addWidget(etiqueta_tiempo)
-        toolbar.addWidget(self.desplegableX)
-        toolbar.addWidget(etiqueta_tension)
-        toolbar.addWidget(self.desplegableY)
-        toolbar.addSeparator()
+        self.factor_tiempo = 1 # Factor de escala para el eje x
+        self.factor_tension = 1 # Factor de escala para el eje y
+        self.pos_label = "upper right" # Posición del Label por default
+        self.modCanal = Cambiar(1, 0, 1)
 
         # Crea el botón para activar/desactivar los cursores
         self.boton_cursor_x = QPushButton("Activar cursor tiempo")
         self.boton_cursor_y = QPushButton("Activar cursor tension") 
-
-        # Añade los botones de cursores a la barra de herramientas
-        toolbar.addWidget(self.boton_cursor_x)
-        toolbar.addWidget(self.boton_cursor_y)
-        toolbar.addSeparator()
 
         # Agrega barra para cambiar de lugar la leyenda
         self.etiqueta_label = QLabel("Label:")
@@ -193,25 +181,32 @@ class VentanaPrincipal(QMainWindow):
                                         "Abajo centro", "Centro izquierda",
                                         "Centro derecha", "Centro"])
 
-        # Añade los elementos de leyenda a la barra de herramientas
-        toolbar.addWidget(self.etiqueta_label)
-        toolbar.addWidget(self.desplegableLabel)
-        toolbar.addSeparator()
-
         # Etiqueta para mostrar la distancia entre los cursores
         self.etiqueta_distancia_tension = QLabel("Tension: -")
         self.etiqueta_distancia_tiempo = QLabel("Tiempo: -")
-
-        # Añade las etiquetas de distancia a la barra de herramientas
-        toolbar.addWidget(self.etiqueta_distancia_tension)
-        toolbar.addWidget(self.etiqueta_distancia_tiempo)
-        toolbar.addSeparator()
 
         # Modificar el canal
         self.boton_abrir_dialogo = QPushButton("Modificar canales")
         self.boton_abrir_dialogo.clicked.connect(self.abrir_dialogo)
 
-        # Añade el botón de modificar canales a la barra de herramientas
+        # Añade los botones a la barra de herramientas
+        toolbar.addWidget(self.boton1)
+        toolbar.addWidget(self.boton2)
+        toolbar.addSeparator()
+        toolbar.addWidget(etiqueta_tiempo)
+        toolbar.addWidget(self.desplegableX)
+        toolbar.addWidget(etiqueta_tension)
+        toolbar.addWidget(self.desplegableY)
+        toolbar.addSeparator()
+        toolbar.addWidget(self.boton_cursor_x)
+        toolbar.addWidget(self.boton_cursor_y)
+        toolbar.addSeparator()
+        toolbar.addWidget(self.etiqueta_label)
+        toolbar.addWidget(self.desplegableLabel)
+        toolbar.addSeparator()
+        toolbar.addWidget(self.etiqueta_distancia_tension)
+        toolbar.addWidget(self.etiqueta_distancia_tiempo)
+        toolbar.addSeparator()
         toolbar.addWidget(self.boton_abrir_dialogo)
 
         # Conecta los botones a sus funciones correspondientes
