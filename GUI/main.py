@@ -10,8 +10,7 @@ try:
     from dataclasses import dataclass
     from PyQt6.QtWidgets import (
         QApplication, QMainWindow, QPushButton, QVBoxLayout,
-        QWidget, QLabel, QToolBar,
-        QComboBox,
+        QWidget, QLabel, QToolBar, QComboBox
     )
     from PyQt6.QtGui import QIcon, QAction
 
@@ -32,12 +31,13 @@ class VentanaPrincipal(QMainWindow):
         self.setWindowTitle("GUI TP Final TCI - Graficador para Osciloscopio")
         self.setWindowIcon(QIcon("icono.jpg"))
 
+        # Inicialización de variables
         self.factor_tiempo = 1
         self.factor_tension = 1
         self.pos_label = "upper right"
         self.modCanal = Cambiar(1, 0, 1)
 
-        # Inicializa variables para los cursores y su estado
+        # Variables para los cursores y su estado
         self.cursor_activado_x = False
         self.cursor_activado_y = False
         self.cursor1_x = None
@@ -45,19 +45,45 @@ class VentanaPrincipal(QMainWindow):
         self.cursor1_y = None
         self.cursor2_y = None
 
+        # Configuración de la interfaz de usuario
+        self._crear_menu()
+        self._crear_toolbar()
+        self._crear_canvas()
+
+        # Conexiones de eventos
+        self.desplegableX.currentIndexChanged.connect(self.actualizar_escala)
+        self.desplegableY.currentIndexChanged.connect(self.actualizar_escala)
+        self.desplegableLabel.currentIndexChanged.connect(self.actualizar_label)
+        self.canvas.mpl_connect("button_press_event", lambda event: onClick(self, event))
+
+    def _crear_menu(self):
+        # Crear barra de menú
         menu_bar = self.menuBar()
+        
+        # Menú Archivo
         menu_archivo = menu_bar.addMenu("Archivo")
         accion_cargar = QAction("Cargar archivo", self)
+        accion_cargar.triggered.connect(lambda: cargar_archivo(self))
         accion_salir = QAction("Salir", self)
+        accion_salir.triggered.connect(self.close)
         menu_archivo.addAction(accion_cargar)
         menu_archivo.addAction(accion_salir)
 
-        accion_cargar.triggered.connect(lambda: cargar_archivo(self))
-        accion_salir.triggered.connect(self.close)
+        # Menú Cursores
+        menu_cursores = menu_bar.addMenu("Cursores")
+        self.accion_activar_cursor_x = QAction("Activar cursor tiempo", self)
+        self.accion_activar_cursor_y = QAction("Activar cursor tensión", self)
+        self.accion_activar_cursor_x.triggered.connect(lambda: activar_cursores_x(self))
+        self.accion_activar_cursor_y.triggered.connect(lambda: activar_cursores_y(self))
+        menu_cursores.addAction(self.accion_activar_cursor_x)
+        menu_cursores.addAction(self.accion_activar_cursor_y)
 
+    def _crear_toolbar(self):
+        # Crear barra de herramientas
         toolbar = QToolBar("Barra de herramientas")
         self.addToolBar(toolbar)
         
+        # Widgets de tiempo, tensión y label en la barra de herramientas
         etiqueta_tiempo = QLabel("Tiempo:")
         self.desplegableX = QComboBox()
         self.desplegableX.addItems(["s", "ms", "us"])
@@ -68,26 +94,18 @@ class VentanaPrincipal(QMainWindow):
 
         self.etiqueta_label = QLabel("Label:")
         self.desplegableLabel = QComboBox()
-        self.desplegableLabel.addItems(["Arriba derecha", "Arriba izquierda", "Abajo derecha", "Abajo izquierda", "Arriba centro", "Abajo centro", "Centro izquierda", "Centro derecha", "Centro"])
+        self.desplegableLabel.addItems([
+            "Arriba derecha", "Arriba izquierda", "Abajo derecha", "Abajo izquierda",
+            "Arriba centro", "Abajo centro", "Centro izquierda", "Centro derecha", "Centro"
+        ])
 
+        # Botones y etiquetas en la barra de herramientas
         self.botonEditarCanales = QPushButton("Modificar canales")
         self.botonEditarCanales.clicked.connect(self.abrirVentanaEditarCanal)
-        
         self.etiqueta_distancia_tension = QLabel("Tension: -")
         self.etiqueta_distancia_tiempo = QLabel("Tiempo: -")
 
-
-        # Menú de opciones para activar/desactivar cursores
-        menu_cursores = menu_bar.addMenu("Cursores")
-        self.accion_activar_cursor_x = QAction("Activar cursor tiempo", self)
-        self.accion_activar_cursor_y = QAction("Activar cursor tensión", self)
-        menu_cursores.addAction(self.accion_activar_cursor_x)
-        menu_cursores.addAction(self.accion_activar_cursor_y)
-
-        # Conecta las acciones del menú a las funciones correspondientes
-        self.accion_activar_cursor_x.triggered.connect(lambda: activar_cursores_x(self))
-        self.accion_activar_cursor_y.triggered.connect(lambda: activar_cursores_y(self))
-
+        # Agregar widgets a la barra de herramientas
         toolbar.addWidget(etiqueta_tiempo)
         toolbar.addWidget(self.desplegableX)
         toolbar.addWidget(etiqueta_tension)
@@ -100,23 +118,21 @@ class VentanaPrincipal(QMainWindow):
         toolbar.addSeparator()
         toolbar.addWidget(self.etiqueta_distancia_tiempo)
 
+    def _crear_canvas(self):
+        # Configuración del área de gráficos
         self.figure = Figure(figsize=(10, 6))
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, self)
         
+        # Layout para el canvas y la barra de navegación
         layout = QVBoxLayout()
         layout.addWidget(self.toolbar)
         layout.addWidget(self.canvas)
         
+        # Widget contenedor central
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
-
-        self.desplegableX.currentIndexChanged.connect(self.actualizar_escala)
-        self.desplegableY.currentIndexChanged.connect(self.actualizar_escala)
-        self.desplegableLabel.currentIndexChanged.connect(self.actualizar_label)
-
-        self.canvas.mpl_connect("button_press_event", lambda event: onClick(self, event))
 
     # Método para abrir la ventana de edición de canales
     def abrirVentanaEditarCanal(self):
@@ -125,7 +141,8 @@ class VentanaPrincipal(QMainWindow):
     
     # Método para actualizar la escala del gráfico
     def actualizar_escala(self):
-        self.factor_tiempo, self.factor_tension = {'s': 1, 'ms': 1e3, 'us': 1e6}[self.desplegableX.currentText()], {'V': 1, 'mV': 1e3, 'uV': 1e6}[self.desplegableY.currentText()]
+        self.factor_tiempo = {'s': 1, 'ms': 1e3, 'us': 1e6}[self.desplegableX.currentText()]
+        self.factor_tension = {'V': 1, 'mV': 1e3, 'uV': 1e6}[self.desplegableY.currentText()]
         graf(self)
     
     # Método para actualizar la posición de la etiqueta
