@@ -11,17 +11,24 @@ try:
     from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar # Importa la clase NavigationToolbar2QT de la librería matplotlib.backends.backend_qt5agg
     from matplotlib.figure import Figure # Importa la clase Figure de la librería matplotlib.figure
 
+    from dataclasses import dataclass
+
     # Importa las clases QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QFileDialog y QLabel de la librería QtWidgets de PyQt6
     from PyQt6.QtWidgets import (
-        QApplication,  # Maneja la aplicación y su ciclo de eventos.
-        QMainWindow,  # Proporciona una ventana principal para la aplicación.
-        QPushButton,  # Crea un botón que puede ser presionado.
-        QVBoxLayout,  # Administra el diseño vertical de widgets.
-        QWidget,  # Base para todos los widgets de interfaz de usuario.
-        QFileDialog,  # Proporciona un diálogo para abrir y guardar archivos.
-        QLabel,  # Muestra texto o imágenes.
-        QToolBar,  # Proporciona una barra de herramientas para acciones rápidas.
-        QComboBox,  # Proporciona un cuadro combinado que permite seleccionar un elemento de una lista desplegable.
+        QApplication,
+        QMainWindow,
+        QPushButton,
+        QVBoxLayout,
+        QWidget,
+        QFileDialog,
+        QLabel,
+        QToolBar,
+        QComboBox,
+        QLineEdit, 
+        QComboBox, 
+        QDialog,
+        QHBoxLayout,
+        QMessageBox
     )
     from PyQt6.QtGui import QIcon # Importa la clase QIcon de la librería QtGui de PyQt6 para manejar iconos. 
 
@@ -32,9 +39,103 @@ except ImportError as e:
     # Imprime el error en caso de que no se pueda importar alguna librería
     print(f"Error al importar las bibliotecas: {e}") 
 
+@dataclass
+class Cambiar:
+    canal: int
+    desplazamiento: float
+    amplitud: float
+
+class CanalDialogo(QDialog):
+    def __init__(self, ventana_principal):
+        super().__init__()
+        self.ventana_principal = ventana_principal
+        self.setWindowTitle("Configuración de Canal")
+        self.setMinimumSize(300, 200)
+        
+        # Layout de la ventana de diálogo
+        layout = QVBoxLayout()
+
+        # Menú desplegable para seleccionar canal
+        self.label_canal = QLabel("Selecciona el Canal:")
+        self.combo_canal = QComboBox()
+        self.combo_canal.addItems(["1", "2", "3", "4"])
+        
+        # Campo de entrada para amplitud
+        self.label_amplitud = QLabel("Amplitud:")
+        self.input_amplitud = QLineEdit()
+        self.input_amplitud.setPlaceholderText("Introduce la amplitud")
+
+        # Campo de entrada para desplazamiento
+        self.label_desplazamiento = QLabel("Desplazamiento:")
+        self.input_desplazamiento = QLineEdit()
+        self.input_desplazamiento.setPlaceholderText("Introduce el desplazamiento")
+        
+        # Agregar widgets al layout
+        layout.addWidget(self.label_canal)
+        layout.addWidget(self.combo_canal)
+        layout.addWidget(self.label_amplitud)
+        layout.addWidget(self.input_amplitud)
+        layout.addWidget(self.label_desplazamiento)
+        layout.addWidget(self.input_desplazamiento)
+
+        button_layout = QHBoxLayout()
+
+        self.boton_aceptar = QPushButton("Aceptar")
+        self.boton_aceptar.clicked.connect(self.modifica_canal)
+
+        self.boton_cancelar = QPushButton("Cancelar")
+        self.boton_cancelar.clicked.connect(self.reject)  # Cierra el diálogo sin hacer nada
+
+        button_layout.addWidget(self.boton_aceptar)
+        button_layout.addWidget(self.boton_cancelar)
+
+        layout.addLayout(button_layout)
+
+        # Establecer el layout en el diálogo
+        self.setLayout(layout)
+    
+    def modifica_canal(self):
+        try:
+            # Validar y convertir amplitud
+            amplitud_text = self.input_amplitud.text()
+            if amplitud_text:  # Si el campo no está vacío
+                try:
+                    self.ventana_principal.modCanal.amplitud = float(amplitud_text)
+                except ValueError:
+                    # Si el valor no es un número válido, mostrar un mensaje de error
+                    raise ValueError("Ingrese un número válido.")
+            else:
+                self.ventana_principal.modCanal.amplitud = 1.0  # Valor por defecto si está vacío
+
+            # Validar y convertir desplazamiento
+            desplazamiento_text = self.input_desplazamiento.text()
+            if desplazamiento_text:  # Si el campo no está vacío
+                try:
+                    self.ventana_principal.modCanal.desplazamiento = float(desplazamiento_text)
+                except ValueError:
+                    # Si el valor no es un número válido, mostrar un mensaje de error
+                    raise ValueError("Ingrese un número válido.")
+            else:
+                self.ventana_principal.modCanal.desplazamiento = 0.0  # Valor por defecto si está vacío
+            
+            # Convertir el canal seleccionado a entero (se asume que siempre habrá un canal válido)
+            try:
+                self.ventana_principal.modCanal.canal = int(self.combo_canal.currentText())
+            except ValueError:
+                raise ValueError("El canal debe ser un número válido.")
+
+            # Llamar al método para actualizar el gráfico
+            self.ventana_principal.graf()
+
+        except ValueError as e:
+            # Si ocurre un error de conversión, mostrar un mensaje de advertencia
+            print(f"Error: {e}")
+            QMessageBox.warning(self, "Error", str(e))
+
+
 
 # Crea una clase Ventana que hereda de QMainWindow
-class Ventana(QMainWindow):
+class VentanaPrincipal(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setMinimumSize(500, 500)  # Establece el tamaño mínimo de la ventana
@@ -64,15 +165,30 @@ class Ventana(QMainWindow):
 
         self.factor_tiempo = 1 # Factor de escala para el eje x
         self.factor_tension = 1 # Factor de escala para el eje y
+        self.pos_label = "upper right" # Posición del Label por default
+        self.modCanal = Cambiar(1, 0, 1)
 
         # Crea el botón para activar/desactivar los cursores
-        self.boton_cursor_x = QPushButton("Cursor_tiempo")
-        self.boton_cursor_y = QPushButton("Cursor_tension")
+        self.boton_cursor_x = QPushButton("Activar cursor tiempo")
+        self.boton_cursor_y = QPushButton("Activar cursor tension") 
+        
+        # Agrega barra para cambiar de lugar la leyenda
+        self.etiqueta_label = QLabel("Label:")
+        self.desplegableLabel = QComboBox()
+        self.desplegableLabel.addItems(["Arriba derecha",
+                                        "Arriba izquierda", "Abajo derecha",
+                                        "Abajo izquierda", "Arriba centro",
+                                        "Abajo centro", "Centro izquierda",
+                                        "Centro derecha", "Centro"])
 
         # Etiqueta para mostrar la distancia entre los cursores
         self.etiqueta_distancia_tension = QLabel("Tension: -")
         self.etiqueta_distancia_tiempo = QLabel("Tiempo: -")
 
+        # Modificar el canal
+        self.boton_abrir_dialogo = QPushButton("Modificar canales")
+        self.boton_abrir_dialogo.clicked.connect(self.abrir_dialogo)
+        
         # Añade los botones a la barra de herramientas
         toolbar.addWidget(self.boton1)
         toolbar.addWidget(self.boton2)
@@ -82,9 +198,11 @@ class Ventana(QMainWindow):
         toolbar.addWidget(self.desplegableY)
         toolbar.addWidget(self.boton_cursor_x)
         toolbar.addWidget(self.boton_cursor_y)
+        toolbar.addWidget(self.etiqueta_label)
+        toolbar.addWidget(self.desplegableLabel)
         toolbar.addWidget(self.etiqueta_distancia_tension)
         toolbar.addWidget(self.etiqueta_distancia_tiempo)
-
+        toolbar.addWidget(self.boton_abrir_dialogo)
 
         # Conecta los botones a sus funciones correspondientes
         self.boton1.clicked.connect(self.cargar_archivo) 
@@ -96,7 +214,9 @@ class Ventana(QMainWindow):
         # Conectar los cambios en los desplegables a la función de actualización de escala
         self.desplegableX.currentIndexChanged.connect(self.actualizar_escala)
         self.desplegableY.currentIndexChanged.connect(self.actualizar_escala)
-
+        
+        # Conecta los cambios en el desplegable del label con la función
+        self.desplegableLabel.currentIndexChanged.connect(self.actualizar_label)
 
         # Inicializa variables para los cursores y su estado
         self.cursor_activado_x = False
@@ -121,19 +241,25 @@ class Ventana(QMainWindow):
         container = QWidget() # Crea un contenedor para los widgets
         container.setLayout(layout) # Establece el layout en el contenedor
         self.setCentralWidget(container) # Establece el contenedor como widget central
-
+        
         # Conecta el evento de clic en el lienzo a la función onclick
         self.canvas.mpl_connect("button_press_event", self.onclick)
 
+
+    def abrir_dialogo(self):
+        # Crear una instancia del diálogo de configuración de canal y mostrarlo
+        dialogo = CanalDialogo(self)
+        dialogo.exec()
+    
     # Método para activar/desactivar los cursores
     def activar_cursores_x(self):
         # Cambia el estado de activación de los cursores
         self.cursor_activado_x = not self.cursor_activado_x
         if self.cursor_activado_x:
-            self.boton_cursor_x.setText("Desactivar Cursor_tiempo")
+            self.boton_cursor_x.setText("Desactivar Cursor Tiempo")
             self.canvas.mpl_connect("button_press_event", self.onclick)
         else:
-            self.boton_cursor_x.setText("Activar Cursor_tiempo")
+            self.boton_cursor_x.setText("Activar Cursor Tiempo")
             self.limpiar_cursores_x()
                 # Método para activar/desactivar los cursores
 
@@ -150,10 +276,10 @@ class Ventana(QMainWindow):
         # Cambia el estado de activación de los cursores
         self.cursor_activado_y = not self.cursor_activado_y
         if self.cursor_activado_y:
-            self.boton_cursor_y.setText("Desactivar Cursor_tension")
+            self.boton_cursor_y.setText("Desactivar cursor tension")
             self.canvas.mpl_connect("button_press_event", self.onclick)
         else:
-            self.boton_cursor_y.setText("Activar Cursor_tension")
+            self.boton_cursor_y.setText("Activar cursor tension")
             self.limpiar_cursores_y()
 
     # Método para limpiar los cursores
@@ -175,8 +301,8 @@ class Ventana(QMainWindow):
                 self.cursor1_x = event.xdata
             elif self.cursor2_x is None:
                 self.cursor2_x = event.xdata
-                distancia = abs(self.cursor2_x - self.cursor1_x) / self.factor_tiempo
-                self.etiqueta_distancia_tiempo.setText(f"Tiempo: {distancia:.2f} {self.desplegableX.currentText()}")
+                distancia = abs(self.cursor2_x - self.cursor1_x) 
+                self.etiqueta_distancia_tiempo.setText(f"Tiempo: {distancia:.8f} {self.desplegableX.currentText()}")
             self.graf()
 
         # Si los cursores están activados, maneja el evento de clic
@@ -185,8 +311,8 @@ class Ventana(QMainWindow):
                 self.cursor1_y = event.ydata
             elif self.cursor2_y is None:
                 self.cursor2_y = event.ydata
-                distancia = abs(self.cursor2_y - self.cursor1_y) / self.factor_tension
-                self.etiqueta_distancia_tension.setText(f"Tensión: {distancia:.2f} {self.desplegableY.currentText()}")
+                distancia = abs(self.cursor2_y - self.cursor1_y)
+                self.etiqueta_distancia_tension.setText(f"Tensión: {distancia:.8f} {self.desplegableY.currentText()}")
             self.graf()
 
 
@@ -245,7 +371,21 @@ class Ventana(QMainWindow):
         # Actualizar el gráfico con las nuevas escalas
         self.graf()
 
+    def actualizar_label(self):
+        posLabel = {"Arriba derecha": "upper right",
+            "Arriba izquierda": "upper left",
+            "Abajo derecha": "lower right",
+            "Abajo izquierda": "lower left",
+            "Arriba centro": "upper center",
+            "Abajo centro": "lower center",
+            "Centro izquierda": "center left",
+            "Centro derecha": "center right",
+            "Centro": "center"}
         
+        posDeseada = self.desplegableLabel.currentText()
+        self.pos_label = posLabel[posDeseada]
+        
+        self.graf()
 
     # Función para generar un gráfico
     def graf(self):
@@ -259,7 +399,12 @@ class Ventana(QMainWindow):
             canales = []  # Lista para almacenar los canales
             # Selecciona las columnas de los canales y aplica el factor de escala
             for i in range(1, 5):
-                if i < self.grafico.shape[1]:  # Si hay más columnas
+                if i == self.modCanal.canal:
+                    if i < self.grafico.shape[1]:  # Si hay más columnas
+                        canal = pd.to_numeric(self.grafico.iloc[:, i], errors='coerce') * self.modCanal.amplitud  * self.factor_tension + self.modCanal.desplazamiento
+                        canales.append(canal)
+
+                elif i < self.grafico.shape[1] :  # Si hay más columnas
                     canal = pd.to_numeric(self.grafico.iloc[:, i], errors='coerce') * self.factor_tension
                     canales.append(canal)
 
@@ -282,7 +427,7 @@ class Ventana(QMainWindow):
             ax.set_title(f"{titulo_actual}", fontsize=14)
             ax.set_xlabel(f"Tiempo ({self.desplegableX.currentText()})", fontsize=14)
             ax.set_ylabel(f"Tensión ({self.desplegableY.currentText()})", fontsize=14)
-            ax.legend(fontsize=12, loc='upper right')
+            ax.legend(fontsize=12, loc=self.pos_label)
             ax.grid(True, linestyle='--', alpha=0.7)
 
             if self.cursor1_x is not None:
@@ -301,10 +446,6 @@ class Ventana(QMainWindow):
             print("No se ha cargado ningún archivo CSV.")  # Mensaje si no hay datos
 
 
-
-
-
-
     # Función para salir
     def salir(self):
         print("Saliendo...")  # Imprime un mensaje en la consola
@@ -313,7 +454,7 @@ class Ventana(QMainWindow):
 
 # Crea una aplicación y una ventana principal
 app = QApplication([])  
-window = Ventana()
+window = VentanaPrincipal()
 
 # Muestra la ventana 
 window.show()
