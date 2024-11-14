@@ -162,6 +162,21 @@ class VentanaPrincipal(QMainWindow):
         else:
             event.ignore()
 
+        # Función para cargar el archivo arrastrado
+    def dropEvent(self, event):
+        if event.mimeData().hasUrls():
+            archivo = event.mimeData().urls()[0].toLocalFile()
+            if archivo.endswith('.csv'):
+                try:
+                    self.grafico = pd.read_csv(archivo, header=0)
+                    print(self.grafico)
+                    print(f"Archivo cargado: {archivo}")
+                    graf(self)
+                except Exception as e:
+                    print(f"Error al cargar el archivo: {e}")
+            else:
+                print("El archivo debe ser un archivo CSV.")
+
 # Crea una aplicación y una ventana principal
 app = QApplication([])  
 window = VentanaPrincipal()
