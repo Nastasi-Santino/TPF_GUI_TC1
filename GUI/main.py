@@ -12,7 +12,8 @@ try:
         QApplication, QMainWindow, QPushButton, QVBoxLayout,
         QWidget, QLabel, QToolBar, QComboBox
     )
-    from PyQt6.QtGui import QIcon, QAction
+    from PyQt6.QtGui import QIcon, QAction, QPixmap, QPainter
+    from PyQt6.QtCore import Qt
 
     from ventanaEditarCanales import VentanaEditarCanal, Cambiar
     from backPrincipal import cargar_archivo, graf
@@ -29,7 +30,7 @@ class VentanaPrincipal(QMainWindow):
         super().__init__()
         self.setMinimumSize(500, 500)
         self.setWindowTitle("GUI TP Final TCI - Graficador para Osciloscopio")
-        self.setWindowIcon(QIcon("icono.jpg"))
+        self.setWindowIcon(QIcon("images/icono.jpg"))
 
         # Inicialización de variables
         self.factor_tiempo = 1
@@ -123,16 +124,60 @@ class VentanaPrincipal(QMainWindow):
         self.figure = Figure(figsize=(10, 6))
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, self)
-        
-        # Layout para el canvas y la barra de navegación
+
+        # Crear un widget contenedor para el canvas y la imagen de fondo
+        self.canvas_container = QWidget()
+        layout_canvas = QVBoxLayout(self.canvas_container)
+        layout_canvas.setContentsMargins(0, 0, 0, 0)
+        layout_canvas.addWidget(self.canvas)
+
+        # Crear QLabel para la imagen de fondo
+        self.background_label = QLabel(self.canvas_container)
+
+        # Escalar el pixmap manteniendo la relación de aspecto
+        pixmap = QPixmap("images/itba_logo.png")
+        pixmap = pixmap.scaled(
+            800, 800, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
+        )
+        self.background_label.setPixmap(self._apply_opacity(pixmap, 0.5))
+        self.background_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Ajustar el tamaño y posición de la imagen al centro del canvas
+        self._centrar_imagen()
+
+        # Layout principal para la barra de navegación y el canvas
         layout = QVBoxLayout()
         layout.addWidget(self.toolbar)
-        layout.addWidget(self.canvas)
-        
+        layout.addWidget(self.canvas_container)
+
         # Widget contenedor central
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, "background_label"):
+            self._centrar_imagen()
+
+    def _centrar_imagen(self):
+        canvas_size = self.canvas.size()
+        self.background_label.resize(self.background_label.pixmap().size())
+        self.background_label.move(
+            (canvas_size.width() - self.background_label.width()) // 2,
+            (canvas_size.height() - self.background_label.height()) // 2,
+        )
+
+    def _apply_opacity(self, pixmap, opacity):
+        transparent_pixmap = QPixmap(pixmap.size())
+        transparent_pixmap.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(transparent_pixmap)
+        painter.setOpacity(opacity)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.end()
+
+        return transparent_pixmap
 
     # Método para abrir la ventana de edición de canales
     def abrirVentanaEditarCanal(self):
@@ -162,7 +207,7 @@ class VentanaPrincipal(QMainWindow):
         else:
             event.ignore()
 
-        # Función para cargar el archivo arrastrado
+    # Función para cargar el archivo arrastrado
     def dropEvent(self, event):
         if event.mimeData().hasUrls():
             archivo = event.mimeData().urls()[0].toLocalFile()

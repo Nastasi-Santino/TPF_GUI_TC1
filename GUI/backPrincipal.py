@@ -14,6 +14,9 @@ def cargar_archivo(ventana):
 def graf(self):
     print("Generando gráfico...")  # Imprime un mensaje en la consola
     if hasattr(self, "grafico"):
+
+        self.background_label.hide()
+
         titulo_actual = self.figure.axes[0].get_title() if self.figure.axes else "Gráfico"
 
         # Selecciona el eje x y aplica el factor de escala
