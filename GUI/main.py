@@ -58,7 +58,7 @@ class VentanaPrincipal(QMainWindow):
         self.canvas.mpl_connect("button_press_event", lambda event: onClick(self, event))
 
     def _crear_menu(self):
-        # Crear barra de menú
+        # Crea barra de menú
         menu_bar = self.menuBar()
         
         # Menú Archivo
@@ -80,7 +80,7 @@ class VentanaPrincipal(QMainWindow):
         menu_cursores.addAction(self.accion_activar_cursor_y)
 
     def _crear_toolbar(self):
-        # Crear barra de herramientas
+        # Crea barra de herramientas
         toolbar = QToolBar("Barra de herramientas")
         self.addToolBar(toolbar)
         
@@ -106,7 +106,7 @@ class VentanaPrincipal(QMainWindow):
         self.etiqueta_distancia_tension = QLabel("Tension: -")
         self.etiqueta_distancia_tiempo = QLabel("Tiempo: -")
 
-        # Agregar widgets a la barra de herramientas
+        # Agrega widgets a la barra de herramientas
         toolbar.addWidget(etiqueta_tiempo)
         toolbar.addWidget(self.desplegableX)
         toolbar.addWidget(etiqueta_tension)
@@ -125,16 +125,16 @@ class VentanaPrincipal(QMainWindow):
         self.canvas = FigureCanvas(self.figure)
         self.toolbar = NavigationToolbar(self.canvas, self)
 
-        # Crear un widget contenedor para el canvas y la imagen de fondo
+        # Crea un widget contenedor para el canvas y la imagen de fondo
         self.canvas_container = QWidget()
         layout_canvas = QVBoxLayout(self.canvas_container)
         layout_canvas.setContentsMargins(0, 0, 0, 0)
         layout_canvas.addWidget(self.canvas)
 
-        # Crear QLabel para la imagen de fondo
+        # Crea un QLabel para la imagen de fondo
         self.background_label = QLabel(self.canvas_container)
 
-        # Escalar el pixmap manteniendo la relación de aspecto
+        # Escala el pixmap manteniendo la relación de aspecto
         pixmap = QPixmap("images/itba_logo.png")
         pixmap = pixmap.scaled(
             800, 800, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation
@@ -142,7 +142,7 @@ class VentanaPrincipal(QMainWindow):
         self.background_label.setPixmap(self._apply_opacity(pixmap, 0.5))
         self.background_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        # Ajustar el tamaño y posición de la imagen al centro del canvas
+        # Ajusta el tamaño y posición de la imagen al centro del canvas
         self._centrar_imagen()
 
         # Layout principal para la barra de navegación y el canvas
